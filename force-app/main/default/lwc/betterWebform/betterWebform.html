@@ -1,0 +1,56 @@
+<template>
+    <!-- Error Message -->
+    <template if:true={errorMessage}>
+        <div class="slds-notify slds-notify_alert slds-theme_alert-texture slds-theme_error slds-m-bottom_small">
+            <span class="slds-assistive-text">error</span>
+            <h2>{errorMessage}</h2>
+        </div>
+    </template>
+
+    <!-- Loading Spinner -->
+    <template if:true={isLoading}>
+        <div class="slds-is-relative" style="height: 200px;">
+            <lightning-spinner alternative-text="Loading webform"></lightning-spinner>
+        </div>
+    </template>
+
+    <!-- Condition Selector -->
+    <div if:true={showSelector} class="slds-m-around_medium">
+        <h2 class="slds-text-heading_medium slds-m-bottom_medium">Select a DBQ Form</h2>
+        <lightning-accordion allow-multiple-sections-open>
+            <template for:each={groupedConditions} for:item="group">
+                <lightning-accordion-section 
+                    key={group.category} 
+                    name={group.category} 
+                    label={group.category}>
+                    <ul class="slds-list_dotted">
+                        <template for:each={group.conditions} for:item="condition">
+                            <li key={condition.Id} class="slds-p-vertical_x-small">
+                                <lightning-button
+                                    variant="base"
+                                    label={condition.Condition__c}
+                                    data-formid={condition.Form_Id__c}
+                                    data-recordid={condition.Id}
+                                    onclick={handleConditionClick}
+                                    class="slds-m-left_none">
+                                </lightning-button>
+                            </li>
+                        </template>
+                    </ul>
+                </lightning-accordion-section>
+            </template>
+        </lightning-accordion>
+    </div>
+
+    <!-- Webform Container -->
+    <template if:false={showSelector}>
+        <div class="slds-m-around_small">
+            <lightning-button 
+                label="Back to Form Selection" 
+                onclick={handleBackToSelector}
+                class="slds-m-bottom_small">
+            </lightning-button>
+        </div>
+        <div data-id="webform-container" style="width: 100%; min-height: 600px;"></div>
+    </template>
+</template>
