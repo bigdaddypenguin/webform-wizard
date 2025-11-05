@@ -15,31 +15,82 @@
     </template>
 
     <!-- Condition Selector -->
-    <div if:true={showSelector} class="slds-m-around_medium">
-        <h2 class="slds-text-heading_medium slds-m-bottom_medium">Select a DBQ Form</h2>
-        <lightning-accordion allow-multiple-sections-open>
-            <template for:each={groupedConditions} for:item="group">
-                <lightning-accordion-section 
-                    key={group.category} 
-                    name={group.category} 
-                    label={group.category}>
-                    <ul class="slds-list_dotted">
-                        <template for:each={group.conditions} for:item="condition">
-                            <li key={condition.Id} class="slds-p-vertical_x-small">
-                                <lightning-button
-                                    variant="base"
-                                    label={condition.Condition__c}
-                                    data-formid={condition.Form_Id__c}
-                                    data-recordid={condition.Id}
-                                    onclick={handleConditionClick}
-                                    class="slds-m-left_none">
-                                </lightning-button>
-                            </li>
-                        </template>
-                    </ul>
-                </lightning-accordion-section>
-            </template>
-        </lightning-accordion>
+    <div if:true={showSelector} class="webform-selector">
+        <div class="selector-header">
+            <h2 class="slds-text-heading_medium">Select a DBQ Form</h2>
+        </div>
+        <div class="selector-columns">
+            <div class="condition-column">
+                <lightning-accordion allow-multiple-sections-open class="compact-accordion">
+                    <template for:each={groupedConditions} for:item="group">
+                        <lightning-accordion-section 
+                            key={group.category} 
+                            name={group.category} 
+                            label={group.category}>
+                            <ul class="condition-list">
+                                <template for:each={group.conditions} for:item="condition">
+                                    <li key={condition.Id} class="slds-p-vertical_x-small">
+                                        <lightning-button
+                                            variant="base"
+                                            label={condition.Condition__c}
+                                            data-formid={condition.Form_Id__c}
+                                            data-recordid={condition.Id}
+                                            onclick={handleConditionSelect}
+                                            class="condition-button slds-m-left_none">
+                                        </lightning-button>
+                                    </li>
+                                </template>
+                            </ul>
+                        </lightning-accordion-section>
+                    </template>
+                </lightning-accordion>
+            </div>
+            <aside class="selection-column">
+                <template if:true={selectedCondition}>
+                    <div class="selection-card-wrapper">
+                        <lightning-card title="Selected DBQ">
+                            <div class="selection-card-body">
+                                <template if:true={selectedConditionPreviewUrl}>
+                                    <div class="preview-frame-wrapper">
+                                        <iframe
+                                            key={selectedConditionPreviewUrl}
+                                            src={selectedConditionPreviewUrl}
+                                            class="preview-frame"
+                                            loading="lazy"
+                                            title="DBQ preview">
+                                        </iframe>
+                                    </div>
+                                </template>
+                                <div class="selection-actions">
+                                    <lightning-button 
+                                        variant="neutral" 
+                                        label="Clear Selection" 
+                                        onclick={handleClearSelection}>
+                                    </lightning-button>
+                                    <lightning-button 
+                                        variant="brand" 
+                                        label="Start Webform" 
+                                        onclick={handleStartSelectedCondition}
+                                        disabled={isLoading}>
+                                    </lightning-button>
+                                </div>
+                            </div>
+                        </lightning-card>
+                    </div>
+                </template>
+                <template if:false={selectedCondition}>
+                    <div class="selection-card-wrapper">
+                        <lightning-card title="Selected DBQ">
+                            <div class="selection-card-body">
+                                <p class="slds-text-body_regular">
+                                    Choose a condition on the left to preview its details and launch the DocuSign webform.
+                                </p>
+                            </div>
+                        </lightning-card>
+                    </div>
+                </template>
+            </aside>
+        </div>
     </div>
 
     <!-- Webform Container -->

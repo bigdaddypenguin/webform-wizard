@@ -10,6 +10,9 @@ export default class BetterWebform extends LightningElement {
   // UI state
   showSelector = true;
   groupedConditions = [];
+  conditionLookup = {};
+  selectedCondition = null;
+  selectedConditionId = null;
   isLoading = false;
   errorMessage;
 
@@ -37,12 +40,21 @@ export default class BetterWebform extends LightningElement {
   _didSubmit = false;
   _didReady = false;
 
+  // Layout measurements
+  _heightRaf = null;
+  _lastSelectorHeight = null;
+  _boundResizeHandler = null;
 
   async connectedCallback() {
+    if (typeof window !== 'undefined') {
+      this._boundResizeHandler = () => this.scheduleSelectorHeightUpdate();
+      window.addEventListener('resize', this._boundResizeHandler);
+    }
+
     try {
-      console.log('[LWC] Loading DocuSign library�?�');
+      console.log('[LWC] Loading DocuSign library');
       await loadScript(this, docusignBundle);
-      console.log('[LWC] DocuSign script loaded, initializing SDK�?�');
+      console.log('[LWC] DocuSign script loaded, initializing SDK');
 
       // Public webforms: any key works; you just need to call loadDocuSign
       this.docusignSDK = await window.DocuSign.loadDocuSign('WEBFORMS_PUBLIC');
@@ -63,14 +75,24 @@ export default class BetterWebform extends LightningElement {
     if (this.webformsInstance && typeof this.webformsInstance.destroy === 'function') {
       try { this.webformsInstance.destroy(); } catch (e) { /* noop */ }
     }
+    if (this._boundResizeHandler && typeof window !== 'undefined') {
+      window.removeEventListener('resize', this._boundResizeHandler);
+      this._boundResizeHandler = null;
+    }
+    if (this._heightRaf && typeof window !== 'undefined') {
+      window.cancelAnimationFrame(this._heightRaf);
+      this._heightRaf = null;
+    }
   }
 
   renderedCallback() {
+    this.scheduleSelectorHeightUpdate();
+
     if (this.pendingFormUrl && this.pendingInstanceToken && !this.hasRendered && !this.showSelector) {
       this.hasRendered = true;
       const container = this.template.querySelector('[data-id="webform-container"]');
       if (container) {
-        console.log('[LWC] Container found, initializing webform�?�');
+        console.log('[LWC] Container found, initializing webform');
         this.initializeWebform(container, this.pendingFormUrl, this.pendingInstanceToken);
       } else {
         console.error('[LWC] Container not found in renderedCallback');
@@ -81,12 +103,24 @@ export default class BetterWebform extends LightningElement {
   @wire(getConditions)
   wiredConditions({ data, error }) {
     if (data) {
-      const grouped = data.reduce((acc, condition) => {
-        const cat = condition.Category__c || 'Other';
-        if (!acc[cat]) acc[cat] = [];
-        acc[cat].push(condition);
-        return acc;
-      }, {});
+      const lookup = {};
+      const grouped = {};
+
+      data.forEach((condition) => {
+        lookup[condition.Id] = condition;
+
+        const category = condition.Category__c || 'Other';
+        if (!grouped[category]) {
+          grouped[category] = [];
+        }
+        grouped[category].push(condition);
+      });
+
+      this.conditionLookup = lookup;
+      if (this.selectedConditionId) {
+        this.selectedCondition = this.conditionLookup[this.selectedConditionId] || null;
+      }
+
       this.groupedConditions = Object.keys(grouped).map(category => ({
         category,
         conditions: grouped[category]
@@ -97,7 +131,55 @@ export default class BetterWebform extends LightningElement {
     }
   }
 
-  async handleConditionClick(event) {
+  handleConditionSelect(event) {
+    const recordId = event.target?.dataset?.recordid;
+    if (!recordId) {
+      return;
+    }
+
+    const condition = this.conditionLookup?.[recordId];
+    if (!condition) {
+      console.warn('[LWC] Selected condition not found for Id:', recordId);
+      return;
+    }
+
+    this.selectedCondition = condition;
+    this.selectedConditionId = recordId;
+    this.errorMessage = null;
+  }
+
+  handleClearSelection() {
+    this.selectedCondition = null;
+    this.selectedConditionId = null;
+  }
+
+  get selectedConditionCategory() {
+    if (!this.selectedCondition) {
+      return '';
+    }
+    return this.selectedCondition.Category__c || 'Other';
+  }
+
+  get selectedConditionFormId() {
+    if (!this.selectedCondition) {
+      return '';
+    }
+    return this.selectedCondition.Form_Id__c || '';
+  }
+
+  get selectedConditionPreviewUrl() {
+    if (!this.selectedCondition) {
+      return '';
+    }
+    return this.selectedCondition.Webform_URL__c || '';
+  }
+
+  async handleStartSelectedCondition() {
+    if (!this.selectedCondition) {
+      this.errorMessage = 'Select a condition to launch its webform.';
+      return;
+    }
+
     if (!this.docusignLoaded) {
       this.errorMessage = 'DocuSign library not loaded yet. Please try again in a moment.';
       return;
@@ -106,8 +188,8 @@ export default class BetterWebform extends LightningElement {
     this.isLoading = true;
     this.errorMessage = null;
 
-    const formId = event.target.dataset.formid;
-    const dbqWebformId = event.target.dataset.recordid;
+    const formId = this.selectedCondition.Form_Id__c;
+    const dbqWebformId = this.selectedCondition.Id;
 
     if (!formId || !dbqWebformId) {
       this.errorMessage = 'Missing form information';
@@ -144,6 +226,7 @@ export default class BetterWebform extends LightningElement {
       // 4) Flip to the embed view
       this.showSelector = false;
       this.isLoading = false;
+      this.scheduleSelectorHeightUpdate();
 
       // Reset guards for a fresh session
       this._didEnd = false;
@@ -172,12 +255,16 @@ export default class BetterWebform extends LightningElement {
     this.currentFormId = null;
     this.webformInstanceRecordId = null;
     this.webformsInstance = null;
+    this.selectedCondition = null;
+    this.selectedConditionId = null;
     this.pendingFormUrl = null;
     this.pendingInstanceToken = null;
     this.hasRendered = false;
     this._didEnd = false;
     this._didSubmit = false;
     this._didReady = false;
+
+    this.scheduleSelectorHeightUpdate();
   }
 
 
@@ -316,6 +403,45 @@ export default class BetterWebform extends LightningElement {
       } catch (e) { /* noop */ }
       console.error('========================================');
       this.errorMessage = error?.body?.message || error?.message || 'Failed to update status';
+    }
+  }
+
+  scheduleSelectorHeightUpdate() {
+    if (this._heightRaf) {
+      return;
+    }
+    if (typeof window === 'undefined') {
+      return;
+    }
+    this._heightRaf = window.requestAnimationFrame(() => {
+      this._heightRaf = null;
+      this.updateSelectorHeight();
+    });
+  }
+
+  updateSelectorHeight() {
+    if (!this.template) {
+      return;
+    }
+
+    if (!this.showSelector) {
+      this.template.host.style.removeProperty('--selector-height');
+      this._lastSelectorHeight = null;
+      return;
+    }
+
+    const hostRect = this.template.host.getBoundingClientRect();
+    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+    const available = viewportHeight - hostRect.top - 24;
+
+    if (available <= 0) {
+      return;
+    }
+
+    const rounded = Math.floor(available);
+    if (this._lastSelectorHeight !== rounded) {
+      this._lastSelectorHeight = rounded;
+      this.template.host.style.setProperty('--selector-height', `${rounded}px`);
     }
   }
 }

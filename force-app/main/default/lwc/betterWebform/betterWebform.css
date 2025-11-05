@@ -1,0 +1,195 @@
+:host {
+  display: block;
+}
+
+.webform-selector {
+  padding: 1rem 1.5rem 1.5rem;
+  margin: 0;
+  height: var(--selector-height, auto);
+  max-height: var(--selector-height, auto);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+.selector-header {
+  margin-bottom: 0.75rem;
+}
+
+.selector-columns {
+  display: flex;
+  gap: 1rem;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.condition-column {
+  flex: 1 1 50%;
+  min-width: 0;
+  max-height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.selection-column {
+  flex: 1 1 50%;
+  min-width: 360px;
+  position: sticky;
+  top: 1rem;
+  max-height: 100%;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.selection-card-wrapper {
+  height: 100%;
+  overflow: hidden;
+  padding-right: 0;
+  min-height: 0;
+}
+
+.selection-card-wrapper lightning-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.selection-card-body {
+  padding: 0.75rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.compact-accordion .slds-accordion__summary {
+  padding: 0.5rem 0.75rem;
+}
+
+.compact-accordion .slds-accordion__summary-heading {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.compact-accordion .slds-accordion__content {
+  padding: 0.5rem 0.75rem 0.75rem;
+}
+
+.condition-list {
+  margin: 0.25rem 0 0.5rem;
+  padding-left: 0;
+  list-style: none;
+}
+
+.condition-list li {
+  margin: 0.25rem 0;
+}
+
+.condition-button {
+  --slds-c-button-line-height: 1.4rem;
+  --slds-c-button-font-size: 0.9rem;
+  --slds-c-button-spacing-inline-start: 0.5rem;
+  --slds-c-button-spacing-inline-end: 0.5rem;
+}
+
+.condition-button::part(button) {
+  padding-top: 0.15rem;
+  padding-bottom: 0.15rem;
+}
+
+.selection-card-title {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.selection-card-title span {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--lwc-colorTextDefault, #1b2638);
+}
+
+.selection-card-meta {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.preview-frame-wrapper {
+  border: 1px solid var(--lwc-colorBorder, #d4d8dd);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #fff;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.preview-frame {
+  display: block;
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 320px;
+  max-height: 520px;
+  border: 0;
+}
+
+.selection-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .webform-selector {
+    height: auto;
+    max-height: none;
+  }
+
+  .selector-columns {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .selection-column {
+    width: 100%;
+    min-width: 0;
+    position: static;
+    max-height: none;
+    min-height: auto;
+  }
+
+  .condition-column {
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+    min-height: auto;
+  }
+
+  .selection-card-wrapper {
+    padding-right: 0;
+    height: auto;
+    overflow: visible;
+    min-height: auto;
+  }
+
+  .selection-card-body {
+    overflow: visible;
+    min-height: auto;
+  }
+
+  .preview-frame {
+    max-height: none;
+  }
+
+  .selection-actions {
+    margin-top: 1rem;
+  }
+}
